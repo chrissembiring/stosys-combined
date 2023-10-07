@@ -47,8 +47,8 @@ extern "C" {
     #define MDTS (64 * 4096)
 
     // uint64_t mdts;
-    // struct user_zns_device *zns_device;
-    // struct zns_device_metadata *zns_metadata;
+    struct user_zns_device *zns_device;
+    struct zns_device_metadata *zns_metadata;
 
     /*
     The functions mmap_registers() and get_mdts_size() are intended to extract MDTS value of ZNS device.
@@ -180,7 +180,7 @@ extern "C" {
         return 0;
     }
     
-    /*
+    
 
     int free_zone_number(int offset) {
         return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset ) / zns_metadata->n_blocks_per_zone;
@@ -307,7 +307,7 @@ extern "C" {
         return (void *)0;
     }
 
-    */
+    
 
     int deinit_ss_zns_device(struct user_zns_device *my_dev) {
         int ret = -ENOSYS;
@@ -341,7 +341,9 @@ extern "C" {
 
         auto *metadata = static_cast<struct zns_device_metadata *>(calloc(sizeof(struct zns_device_metadata), 1));
         (*my_dev) = static_cast<struct user_zns_device *>(calloc(sizeof(struct user_zns_device), 1));
-        (*my_dev)->_private = metadata; 
+        (*my_dev)->_private = metadata;
+
+        metadata->fd = fd;
 
         /**
         * Device Identification Phase
@@ -410,7 +412,7 @@ extern "C" {
         //mdts = get_mdts_size(metadata->fd);
         //printf("%lu", mdts);
 
-        // pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
+        pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
 
         // Reset the device if required
         if (params->force_reset) {
