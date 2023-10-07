@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/m3.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m3.dir/src/m23-ftl/m3.cpp.o"
+  "/home/user/stosys-group-5/src/m23-ftl/m3.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m3.dir/src/m23-ftl/m3.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -14,7 +14,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/stosys.dir/DependInfo.cmake"
+  "/home/user/stosys-group-5/build/CMakeFiles/stosys.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

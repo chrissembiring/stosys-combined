@@ -4,11 +4,11 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/common/nvmeprint.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o"
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/src/common/utils.cpp.o"
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/device.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/src/m1/device.cpp.o"
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/src/m1/m1.cpp.o"
-  "/home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1_assignment.cpp" "/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o"
+  "/home/user/stosys-group-5/src/common/nvmeprint.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o"
+  "/home/user/stosys-group-5/src/common/utils.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m1.dir/src/common/utils.cpp.o"
+  "/home/user/stosys-group-5/src/m1/device.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m1.dir/src/m1/device.cpp.o"
+  "/home/user/stosys-group-5/src/m1/m1.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m1.dir/src/m1/m1.cpp.o"
+  "/home/user/stosys-group-5/src/m1/m1_assignment.cpp" "/home/user/stosys-group-5/build/CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

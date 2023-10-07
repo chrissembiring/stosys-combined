@@ -6,13 +6,13 @@
 
 #IncludeRegexTransform: 
 
-/home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.h
+/home/user/stosys-group-5/src/common/utils.h
 cstdint
 -
 string
 -
 
-/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/m2.cpp
+/home/user/stosys-group-5/src/m23-ftl/m2.cpp
 sys/types.h
 -
 unistd.h
@@ -28,11 +28,11 @@ cstdlib
 cstring
 -
 ./zns_device.h
-/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.h
+/home/user/stosys-group-5/src/m23-ftl/zns_device.h
 ../common/utils.h
-/home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.h
+/home/user/stosys-group-5/src/common/utils.h
 
-/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.h
+/home/user/stosys-group-5/src/m23-ftl/zns_device.h
 cstdint
 -
 pthread.h

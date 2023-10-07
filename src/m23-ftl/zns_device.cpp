@@ -47,8 +47,8 @@ extern "C" {
     #define MDTS (64 * 4096)
 
     // uint64_t mdts;
-    struct user_zns_device *zns_device;
-    struct zns_device_metadata *zns_metadata;
+    // struct user_zns_device *zns_device;
+    // struct zns_device_metadata *zns_metadata;
 
     /*
     The functions mmap_registers() and get_mdts_size() are intended to extract MDTS value of ZNS device.
@@ -180,6 +180,7 @@ extern "C" {
         return 0;
     }
     
+    /*
 
     int free_zone_number(int offset) {
         return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset ) / zns_metadata->n_blocks_per_zone;
@@ -306,6 +307,8 @@ extern "C" {
         return (void *)0;
     }
 
+    */
+
     int deinit_ss_zns_device(struct user_zns_device *my_dev) {
         int ret = -ENOSYS;
 
@@ -407,7 +410,7 @@ extern "C" {
         //mdts = get_mdts_size(metadata->fd);
         //printf("%lu", mdts);
 
-        pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
+        // pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
 
         // Reset the device if required
         if (params->force_reset) {
@@ -456,8 +459,11 @@ extern "C" {
 
         if (size <= MDTS) {
             __u64 lba_result = 0;
-            ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required - 1,
-            0, 0, 0, 0, size, (char*) buffer, 0, nullptr, &lba_result);
+            
+            // TODO (Chris) : Appending might be better, find a way to switch from nvme_write()
+            // ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required - 1,
+            
+            ret = nvme_write(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required - 1, 0, 0, 0, 0, 0, 0, size, (char*) buffer, 0, nullptr);
             if (ret != 0) {
                 printf("[ERROR] FAILED TO WRITE TO DEVICE: %d\n", ret);
                 return ret;
@@ -473,8 +479,9 @@ extern "C" {
                 metadata->log_zone_end = lba_result + 1;
             }
 
-            for (uint32_t i = 0; i < blocks_required; i++) {
-                log_zone_mapping[address + i * my_dev->lba_size_bytes] = metadata->log_zone_end + i;
+            for (uint32_t i = address; i < address + blocks_required; i++) {
+                log_zone_mapping[i] = metadata->log_zone_slba;
+                metadata->log_zone_slba += 1;
             }
 
         return 0;

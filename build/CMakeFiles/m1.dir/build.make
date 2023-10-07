@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/user/2023-msc-stosys-skeleton-af65a8c
+CMAKE_SOURCE_DIR = /home/user/stosys-group-5
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/user/2023-msc-stosys-skeleton-af65a8c/build
+CMAKE_BINARY_DIR = /home/user/stosys-group-5/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/m1.dir/depend.make
@@ -59,68 +59,68 @@ include CMakeFiles/m1.dir/flags.make
 
 CMakeFiles/m1.dir/src/m1/m1.cpp.o: CMakeFiles/m1.dir/flags.make
 CMakeFiles/m1.dir/src/m1/m1.cpp.o: ../src/m1/m1.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/m1.dir/src/m1/m1.cpp.o"
-	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/m1.cpp.o -c /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/m1.dir/src/m1/m1.cpp.o"
+	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/m1.cpp.o -c /home/user/stosys-group-5/src/m1/m1.cpp
 
 CMakeFiles/m1.dir/src/m1/m1.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/m1.dir/src/m1/m1.cpp.i"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1.cpp > CMakeFiles/m1.dir/src/m1/m1.cpp.i
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/stosys-group-5/src/m1/m1.cpp > CMakeFiles/m1.dir/src/m1/m1.cpp.i
 
 CMakeFiles/m1.dir/src/m1/m1.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/m1.dir/src/m1/m1.cpp.s"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1.cpp -o CMakeFiles/m1.dir/src/m1/m1.cpp.s
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/stosys-group-5/src/m1/m1.cpp -o CMakeFiles/m1.dir/src/m1/m1.cpp.s
 
 CMakeFiles/m1.dir/src/m1/device.cpp.o: CMakeFiles/m1.dir/flags.make
 CMakeFiles/m1.dir/src/m1/device.cpp.o: ../src/m1/device.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/m1.dir/src/m1/device.cpp.o"
-	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/device.cpp.o -c /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/device.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/m1.dir/src/m1/device.cpp.o"
+	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/device.cpp.o -c /home/user/stosys-group-5/src/m1/device.cpp
 
 CMakeFiles/m1.dir/src/m1/device.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/m1.dir/src/m1/device.cpp.i"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/device.cpp > CMakeFiles/m1.dir/src/m1/device.cpp.i
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/stosys-group-5/src/m1/device.cpp > CMakeFiles/m1.dir/src/m1/device.cpp.i
 
 CMakeFiles/m1.dir/src/m1/device.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/m1.dir/src/m1/device.cpp.s"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/device.cpp -o CMakeFiles/m1.dir/src/m1/device.cpp.s
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/stosys-group-5/src/m1/device.cpp -o CMakeFiles/m1.dir/src/m1/device.cpp.s
 
 CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o: CMakeFiles/m1.dir/flags.make
 CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o: ../src/m1/m1_assignment.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o"
-	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o -c /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1_assignment.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o"
+	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.o -c /home/user/stosys-group-5/src/m1/m1_assignment.cpp
 
 CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.i"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1_assignment.cpp > CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.i
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/stosys-group-5/src/m1/m1_assignment.cpp > CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.i
 
 CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.s"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/2023-msc-stosys-skeleton-af65a8c/src/m1/m1_assignment.cpp -o CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.s
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/stosys-group-5/src/m1/m1_assignment.cpp -o CMakeFiles/m1.dir/src/m1/m1_assignment.cpp.s
 
 CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o: CMakeFiles/m1.dir/flags.make
 CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o: ../src/common/nvmeprint.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o"
-	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o -c /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/nvmeprint.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o"
+	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/common/nvmeprint.cpp.o -c /home/user/stosys-group-5/src/common/nvmeprint.cpp
 
 CMakeFiles/m1.dir/src/common/nvmeprint.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/m1.dir/src/common/nvmeprint.cpp.i"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/nvmeprint.cpp > CMakeFiles/m1.dir/src/common/nvmeprint.cpp.i
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/stosys-group-5/src/common/nvmeprint.cpp > CMakeFiles/m1.dir/src/common/nvmeprint.cpp.i
 
 CMakeFiles/m1.dir/src/common/nvmeprint.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/m1.dir/src/common/nvmeprint.cpp.s"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/nvmeprint.cpp -o CMakeFiles/m1.dir/src/common/nvmeprint.cpp.s
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/stosys-group-5/src/common/nvmeprint.cpp -o CMakeFiles/m1.dir/src/common/nvmeprint.cpp.s
 
 CMakeFiles/m1.dir/src/common/utils.cpp.o: CMakeFiles/m1.dir/flags.make
 CMakeFiles/m1.dir/src/common/utils.cpp.o: ../src/common/utils.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/m1.dir/src/common/utils.cpp.o"
-	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/common/utils.cpp.o -c /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/m1.dir/src/common/utils.cpp.o"
+	g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/m1.dir/src/common/utils.cpp.o -c /home/user/stosys-group-5/src/common/utils.cpp
 
 CMakeFiles/m1.dir/src/common/utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/m1.dir/src/common/utils.cpp.i"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.cpp > CMakeFiles/m1.dir/src/common/utils.cpp.i
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/user/stosys-group-5/src/common/utils.cpp > CMakeFiles/m1.dir/src/common/utils.cpp.i
 
 CMakeFiles/m1.dir/src/common/utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/m1.dir/src/common/utils.cpp.s"
-	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/2023-msc-stosys-skeleton-af65a8c/src/common/utils.cpp -o CMakeFiles/m1.dir/src/common/utils.cpp.s
+	g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/user/stosys-group-5/src/common/utils.cpp -o CMakeFiles/m1.dir/src/common/utils.cpp.s
 
 # Object files for target m1
 m1_OBJECTS = \
@@ -140,7 +140,7 @@ m1_EXTERNAL_OBJECTS =
 ../bin/m1: CMakeFiles/m1.dir/src/common/utils.cpp.o
 ../bin/m1: CMakeFiles/m1.dir/build.make
 ../bin/m1: CMakeFiles/m1.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable ../bin/m1"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/user/stosys-group-5/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable ../bin/m1"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/m1.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -153,6 +153,6 @@ CMakeFiles/m1.dir/clean:
 .PHONY : CMakeFiles/m1.dir/clean
 
 CMakeFiles/m1.dir/depend:
-	cd /home/user/2023-msc-stosys-skeleton-af65a8c/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/user/2023-msc-stosys-skeleton-af65a8c /home/user/2023-msc-stosys-skeleton-af65a8c /home/user/2023-msc-stosys-skeleton-af65a8c/build /home/user/2023-msc-stosys-skeleton-af65a8c/build /home/user/2023-msc-stosys-skeleton-af65a8c/build/CMakeFiles/m1.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/user/stosys-group-5/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/user/stosys-group-5 /home/user/stosys-group-5 /home/user/stosys-group-5/build /home/user/stosys-group-5/build /home/user/stosys-group-5/build/CMakeFiles/m1.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/m1.dir/depend
 

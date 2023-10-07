@@ -1,8 +1,8 @@
-# Install script for directory: /home/user/2023-msc-stosys-skeleton-af65a8c
+# Install script for directory: /home/user/stosys-group-5
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/user/local/")
+  set(CMAKE_INSTALL_PREFIX "/home/root/local/")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -50,8 +50,8 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
     endif()
   endforeach()
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES
-    "/home/user/2023-msc-stosys-skeleton-af65a8c/lib/libstosys.so.1.0.1"
-    "/home/user/2023-msc-stosys-skeleton-af65a8c/lib/libstosys.so.1"
+    "/home/user/stosys-group-5/lib/libstosys.so.1.0.1"
+    "/home/user/stosys-group-5/lib/libstosys.so.1"
     )
   foreach(file
       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libstosys.so.1.0.1"
@@ -73,7 +73,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libstosys.so"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/home/user/2023-msc-stosys-skeleton-af65a8c/lib/libstosys.so")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/home/user/stosys-group-5/lib/libstosys.so")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libstosys.so" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libstosys.so")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -90,5 +90,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/user/2023-msc-stosys-skeleton-af65a8c/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/user/stosys-group-5/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
