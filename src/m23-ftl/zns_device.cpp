@@ -214,11 +214,11 @@ extern "C" {
 
             if (data_zone_mapping.find(iteration-> first) != data_zone_mapping.end()) {
                 ret = io_with_mdts(zns_metadata->fd, zns_metadata->nsid, data_zone_mapping[iteration->first], 
-                                    0, //entry 
+                                    num_blocks, //entry 
                                     buffer,
                                     num_blocks * lsb,
-                                    0,
-                                    0,
+                                    zns_device->lba_size_bytes,
+                                    MDTS,
                                     true,
                                     0);
                 
@@ -306,8 +306,6 @@ extern "C" {
         }
         return (void *)0;
     }
-
-    
 
     int deinit_ss_zns_device(struct user_zns_device *my_dev) {
         int ret = -ENOSYS;
