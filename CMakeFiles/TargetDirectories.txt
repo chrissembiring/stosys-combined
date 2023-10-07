@@ -1,0 +1,10 @@
+/home/user/stosys-group-5/CMakeFiles/install/strip.dir
+/home/user/stosys-group-5/CMakeFiles/install.dir
+/home/user/stosys-group-5/CMakeFiles/list_install_components.dir
+/home/user/stosys-group-5/CMakeFiles/rebuild_cache.dir
+/home/user/stosys-group-5/CMakeFiles/edit_cache.dir
+/home/user/stosys-group-5/CMakeFiles/m3.dir
+/home/user/stosys-group-5/CMakeFiles/install/local.dir
+/home/user/stosys-group-5/CMakeFiles/m2.dir
+/home/user/stosys-group-5/CMakeFiles/stosys.dir
+/home/user/stosys-group-5/CMakeFiles/m1.dir

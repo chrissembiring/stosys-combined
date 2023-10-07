@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/backup_zns_device_file.cpp
+cstdlib
+-
+stdio.h
+-
+cerrno
+-
+libnvme.h
+-
+zns_device.h
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.h
+
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.cpp
+zns_device.h
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.h
+libnvme.h
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/libnvme.h
+cerrno
+-
+unordered_map
+-
+string.h
+-
+unistd.h
+-
+fcntl.h
+-
+sys/mman.h
+-
+
+/home/user/2023-msc-stosys-skeleton-af65a8c/src/m23-ftl/zns_device.h
+cstdint
+-
+pthread.h
+-
+

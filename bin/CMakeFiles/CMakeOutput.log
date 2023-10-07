@@ -1,0 +1,81 @@
+Determining if the BZ2_bzCompressInit exist passed with the following output:
+Change Dir: /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_c477a/fast && /usr/bin/make -f CMakeFiles/cmTC_c477a.dir/build.make CMakeFiles/cmTC_c477a.dir/build
+make[1]: Entering directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_c477a.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTC_c477a.dir/CheckSymbolExists.c.o   -c /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_c477a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c477a.dir/link.txt --verbose=1
+/usr/bin/cc      CMakeFiles/cmTC_c477a.dir/CheckSymbolExists.c.o  -o cmTC_c477a  /usr/lib/x86_64-linux-gnu/libbz2.so 
+make[1]: Leaving directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+
+
+File /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <bzlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef BZ2_bzCompressInit
+  return ((int*)(&BZ2_bzCompressInit))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the BZ2_bzCompressInit exist passed with the following output:
+Change Dir: /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_786bd/fast && /usr/bin/make -f CMakeFiles/cmTC_786bd.dir/build.make CMakeFiles/cmTC_786bd.dir/build
+make[1]: Entering directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_786bd.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTC_786bd.dir/CheckSymbolExists.c.o   -c /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_786bd
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_786bd.dir/link.txt --verbose=1
+/usr/bin/cc      CMakeFiles/cmTC_786bd.dir/CheckSymbolExists.c.o  -o cmTC_786bd  /usr/lib/x86_64-linux-gnu/libbz2.so 
+make[1]: Leaving directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+
+
+File /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <bzlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef BZ2_bzCompressInit
+  return ((int*)(&BZ2_bzCompressInit))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the BZ2_bzCompressInit exist passed with the following output:
+Change Dir: /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_60317/fast && /usr/bin/make -f CMakeFiles/cmTC_60317.dir/build.make CMakeFiles/cmTC_60317.dir/build
+make[1]: Entering directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_60317.dir/CheckSymbolExists.c.o
+/usr/bin/gcc    -o CMakeFiles/cmTC_60317.dir/CheckSymbolExists.c.o   -c /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_60317
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_60317.dir/link.txt --verbose=1
+/usr/bin/gcc      CMakeFiles/cmTC_60317.dir/CheckSymbolExists.c.o  -o cmTC_60317  /usr/lib/x86_64-linux-gnu/libbz2.so 
+make[1]: Leaving directory '/home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp'
+
+
+File /home/user/2023-msc-stosys-skeleton-af65a8c/bin/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <bzlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef BZ2_bzCompressInit
+  return ((int*)(&BZ2_bzCompressInit))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
