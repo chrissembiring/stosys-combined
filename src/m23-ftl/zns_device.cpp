@@ -264,7 +264,7 @@ extern "C" {
 
     void *gc_loop(void *args) {
         struct zns_device_metadata *zns_metadata = (struct zns_device_metadata *)args;
-        while (1) {
+        while (true) {
             pthread_mutex_lock(&zns_metadata->gc_mutex);
             while (!zns_metadata->gc_thread_stop && !zns_metadata->do_gc) {
                 pthread_cond_wait(&zns_metadata->gc_wakeup, &zns_metadata->gc_mutex);
@@ -276,7 +276,7 @@ extern "C" {
             }
 
             std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> zone_sets;
-            //std::unordered_map<int64_t, int64_t>::iterator iteration;
+            // std::unordered_map<int64_t, int64_t>::iterator iteration;
             auto iteration = log_zone_mapping.begin();
 
             for (iteration; iteration != log_zone_mapping.end(); iteration++) {
@@ -311,8 +311,9 @@ extern "C" {
         int ret = -ENOSYS;
 
         auto *metadata = (struct zns_device_metadata*) my_dev->_private;
+        metadata->gc_thread_stop = true;
         pthread_cond_signal(&metadata->gc_wakeup);
-        pthread_join(metadata->gc_thread_id, nullptr);
+        pthread_join(metadata->gc_thread_id, NULL);
         pthread_mutex_destroy(&metadata->gc_mutex);
         pthread_cond_destroy(&metadata->gc_wakeup);
         
@@ -322,6 +323,7 @@ extern "C" {
             return ret;
         }
 
+        free(metadata->zone_states);
         free(my_dev->_private);
         free(my_dev);
 
@@ -385,6 +387,8 @@ extern "C" {
             return ret;
         }
 
+        ret = pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
+
         /**
         * Attributes & Data Population Phase
         * Mainly for calculating and filling in corresponding attributes data
@@ -397,6 +401,8 @@ extern "C" {
         (*my_dev)->tparams.zns_zone_capacity = block_per_zone * (*my_dev)->lba_size_bytes;
         (*my_dev)->capacity_bytes = (single_zone_report.nr_zones - params->log_zones) * ((*my_dev)->tparams.zns_zone_capacity);
 
+
+
         // For Milestone 2, GC watermark and two "pointers" chasing each other
         metadata->gc_watermark = params->gc_wmark;
         metadata->log_zone_start = 0;
@@ -405,12 +411,17 @@ extern "C" {
         metadata->data_zone_end = params->log_zones * block_per_zone;
         metadata->n_blocks_per_zone = block_per_zone;
         metadata->n_log_zone = params->log_zones;
+        
+        /*
+        for (uint64_t i = params->log_zones; i < single_zone_report.nr_zones; i++) {
+            metadata->zone_states[i] = (((struct nvme_zone_report *)all_zone_reports)->entries[i].zs >> 4);
+        }
+        */
+        
         free(all_zone_reports);
 
         //mdts = get_mdts_size(metadata->fd);
         //printf("%lu", mdts);
-
-        pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
 
         // Reset the device if required
         if (params->force_reset) {

@@ -151,12 +151,12 @@ static int wr_full_device_verify(struct user_zns_device *dev,
             // now we need to write the buffer in parallel to the zns device, and the file
             ret = zns_udevice_write(dev, woffset, b1, dev->lba_size_bytes);
             if(ret != 0){
-                printf("Error: ZNS device writing failed at offset 0x%lx \n", woffset);
+                printf("Error: ZNS device writing failed at offset 0x%lx, after running %d times \n", woffset, i);
                 goto done;
             }
             ret = write_complete_file(fd, woffset, b1, dev->lba_size_bytes);
             if(ret != 0){
-                printf("Error: file writing failed at offset 0x%lx \n", woffset);
+                printf("Error: file writing failed at offset 0x%lx, after running %d times \n", woffset, i);
                 goto done;
             }
         }
