@@ -179,12 +179,14 @@ extern "C" {
 
         return 0;
     }
-    
+
     
 
     int free_zone_number(int offset) {
         return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset ) / zns_metadata->n_blocks_per_zone;
     }
+
+    
 
     int next_empty_zone() {
         for (uint64_t i = zns_metadata->log_zone_num_config; i < zns_device->tparams.zns_num_zones; i++) {
@@ -262,16 +264,16 @@ extern "C" {
         return 0;
     }
 
-    void *gc_loop(void *args) {
-        struct zns_device_metadata *zns_metadata = (struct zns_device_metadata *)args;
+    void *trigger_gc(void *args) {
+        struct zns_device_metadata *metadata = (struct zns_device_metadata *)args;
         while (true) {
-            pthread_mutex_lock(&zns_metadata->gc_mutex);
-            while (!zns_metadata->gc_thread_stop && !zns_metadata->do_gc) {
-                pthread_cond_wait(&zns_metadata->gc_wakeup, &zns_metadata->gc_mutex);
+            pthread_mutex_lock(&metadata->gc_mutex);
+            while (!metadata->gc_thread_stop && !metadata->do_gc) {
+                pthread_cond_wait(&metadata->gc_wakeup, &metadata->gc_mutex);
             }
 
-            if (zns_metadata->gc_thread_stop) {
-                pthread_mutex_unlock(&zns_metadata->gc_mutex);
+            if (metadata->gc_thread_stop) {
+                pthread_mutex_unlock(&metadata->gc_mutex);
                 break;
             }
 
@@ -294,15 +296,15 @@ extern "C" {
                 printf("Error: GC failed, ret:%d\n", ret);
             }
 
-            for (int i = 0; i < zns_metadata->log_zone_num_config; i++) {
-                nvme_zns_mgmt_send(zns_metadata->fd, zns_metadata->nsid, i * zns_metadata->n_blocks_per_zone, false, NVME_ZNS_ZSA_RESET, 0, nullptr);
+            for (int i = 0; i < metadata->log_zone_num_config; i++) {
+                nvme_zns_mgmt_send(metadata->fd, metadata->nsid, i * metadata->n_blocks_per_zone, false, NVME_ZNS_ZSA_RESET, 0, nullptr);
             }
 
-            zns_metadata->log_zone_end = zns_metadata->log_zone_start;
+            metadata->log_zone_end = metadata->log_zone_start;
             log_zone_mapping.clear();
-            zns_metadata->do_gc = false;
-            pthread_cond_signal(&zns_metadata->gc_sleep);
-            pthread_mutex_unlock(&zns_metadata->gc_mutex);
+            metadata->do_gc = false;
+            pthread_cond_signal(&metadata->gc_sleep);
+            pthread_mutex_unlock(&metadata->gc_mutex);
         }
         return (void *)0;
     }
@@ -341,9 +343,12 @@ extern "C" {
 
         auto *metadata = static_cast<struct zns_device_metadata *>(calloc(sizeof(struct zns_device_metadata), 1));
         (*my_dev) = static_cast<struct user_zns_device *>(calloc(sizeof(struct user_zns_device), 1));
-        (*my_dev)->_private = metadata;
+        // (*my_dev)->_private = metadata;
 
         metadata->fd = fd;
+        metadata->gc_watermark = params->gc_wmark;
+        metadata->log_zone_num_config = params->log_zones;
+        (*my_dev)->_private = metadata;
 
         /**
         * Device Identification Phase
@@ -373,6 +378,9 @@ extern "C" {
             return ret;
         }
 
+        (*my_dev)->tparams.zns_num_zones = single_zone_report.nr_zones;
+        metadata->zone_states = (uint8_t *)calloc(single_zone_report.nr_zones, sizeof(uint8_t));
+
         // Get zone report (for all zones)
         // After getting the one single_zone_report, we now know the number of zones
         // Then we proceed to getting reports of all zones
@@ -387,7 +395,7 @@ extern "C" {
             return ret;
         }
 
-        ret = pthread_create(&metadata->gc_thread_id, NULL, &gc_loop, metadata);
+
 
         /**
         * Attributes & Data Population Phase
@@ -396,7 +404,7 @@ extern "C" {
         */
         (*my_dev)->lba_size_bytes = 1 << ns.lbaf[(ns.flbas & 0xf)].ds;
         (*my_dev)->tparams.zns_lba_size = (*my_dev)->lba_size_bytes;
-        (*my_dev)->tparams.zns_num_zones = single_zone_report.nr_zones;
+        // (*my_dev)->tparams.zns_num_zones = single_zone_report.nr_zones;
         uint64_t block_per_zone = ((struct nvme_zone_report *)all_zone_reports)->entries[0].zcap;
         (*my_dev)->tparams.zns_zone_capacity = block_per_zone * (*my_dev)->lba_size_bytes;
         (*my_dev)->capacity_bytes = (single_zone_report.nr_zones - params->log_zones) * ((*my_dev)->tparams.zns_zone_capacity);
@@ -404,7 +412,7 @@ extern "C" {
 
 
         // For Milestone 2, GC watermark and two "pointers" chasing each other
-        metadata->gc_watermark = params->gc_wmark;
+        // metadata->gc_watermark = params->gc_wmark;
         metadata->log_zone_start = 0;
         metadata->log_zone_end = 0;
         metadata->data_zone_start = params->log_zones * block_per_zone;
@@ -412,13 +420,18 @@ extern "C" {
         metadata->n_blocks_per_zone = block_per_zone;
         metadata->n_log_zone = params->log_zones;
         
-        /*
+        
         for (uint64_t i = params->log_zones; i < single_zone_report.nr_zones; i++) {
             metadata->zone_states[i] = (((struct nvme_zone_report *)all_zone_reports)->entries[i].zs >> 4);
         }
-        */
         
         free(all_zone_reports);
+
+        ret = pthread_create(&metadata->gc_thread_id, NULL, &trigger_gc, metadata);
+
+        zns_device =  *my_dev;
+        zns_metadata = metadata;
+
 
         //mdts = get_mdts_size(metadata->fd);
         //printf("%lu", mdts);
@@ -463,10 +476,19 @@ extern "C" {
         return 0;
     }
 
+
+    /*
     int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
         int ret = -ENOSYS;
-        auto *metadata = (zns_device_metadata*) my_dev->_private;
+        struct zns_device_metadata *metadata = (struct zns_device_metadata*) my_dev->_private;
         uint32_t blocks_required = size / my_dev->lba_size_bytes;
+        pthread_mutex_lock(&zns_metadata->gc_mutex);
+        // int free_zone = zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + blocks_required ) / zns_metadata->n_blocks_per_zone;
+        while(free_zone_number(blocks_required) <= metadata->gc_watermark) {
+            zns_metadata->do_gc = true;
+            pthread_cond_signal(&zns_metadata->gc_wakeup);
+            pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
+        }
 
         if (size <= MDTS) {
             __u64 lba_result = 0;
@@ -481,20 +503,49 @@ extern "C" {
             }
             metadata->log_zone_end = lba_result + 1;
             } else {
-                __u64 lba_result = 0;
-                ret = io_with_mdts(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required, buffer, (__u64) size,
-                my_dev->lba_size_bytes, MDTS, false, &lba_result);
-                if (ret != 0) {
-                return ret;
-                }
-                metadata->log_zone_end = lba_result + 1;
+            __u64 lba_result = 0;
+            ret = io_with_mdts(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required, buffer, (__u64) size,
+            my_dev->lba_size_bytes, MDTS, false, &lba_result);
+            if (ret != 0) {
+            return ret;
             }
+            metadata->log_zone_end = lba_result + 1;
+        }
 
-            for (uint32_t i = address; i < address + blocks_required; i++) {
-                log_zone_mapping[i] = metadata->log_zone_slba;
-                metadata->log_zone_slba += 1;
-            }
+        for (uint32_t i = address; i < address + blocks_required; i++) {
+            log_zone_mapping[i] = metadata->log_zone_slba;
+            metadata->log_zone_slba += 1;
+        }
 
+        pthread_mutex_unlock(&zns_metadata->gc_mutex);
+        
+        return 0;
+    }
+
+    */
+
+    int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
+        int ret = -ENOSYS;
+        struct zns_device_metadata *metadata = (struct zns_device_metadata*) my_dev->_private;
+        uint32_t blocks_required = size / my_dev->lba_size_bytes;
+        pthread_mutex_lock(&zns_metadata->gc_mutex);
+        // int free_zone = zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + blocks_required ) / zns_metadata->n_blocks_per_zone;
+        while(free_zone_number(blocks_required) <= metadata->gc_watermark) {
+            zns_metadata->do_gc = true;
+            pthread_cond_signal(&zns_metadata->gc_wakeup);
+            pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
+        }
+
+        __u64 released_lba;
+        int32_t prev_log_zone_end = metadata->log_zone_end;
+        int32_t zone_no = (metadata->log_zone_end / metadata->n_blocks_per_zone);
+        ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required-1, 0, 0, 0, 0, size, buffer, 0, nullptr, &released_lba);
+        metadata->log_zone_end = released_lba + 1;
+        for (uint32_t i = 0; i < blocks_required; i++) {
+            log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
+        }
+
+        pthread_mutex_unlock(&zns_metadata->gc_mutex);
         return 0;
     }
 }
