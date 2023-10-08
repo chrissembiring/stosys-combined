@@ -30,7 +30,7 @@ SOFTWARE.
 #include <cmath>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <string>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <unordered_map>
@@ -41,8 +41,8 @@ SOFTWARE.
 extern "C" {
 
     // Main storage mapping for log (m2) and data (m3)
-    std::unordered_map<uint64_t, uint64_t> log_zone_mapping;
-    std::unordered_map<uint64_t, uint64_t> data_zone_mapping;
+    std::unordered_map<int64_t, int64_t> log_zone_mapping;
+    std::unordered_map<int64_t, int64_t> data_zone_mapping;
 
     #define MDTS (64 * 4096)
 
@@ -278,16 +278,16 @@ extern "C" {
             }
 
             std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> zone_sets;
-            // std::unordered_map<int64_t, int64_t>::iterator iteration;
-            auto iteration = log_zone_mapping.begin();
+            std::unordered_map<int64_t, int64_t>::iterator iteration;
+            // auto iteration = log_zone_mapping.begin();
 
-            for (iteration; iteration != log_zone_mapping.end(); iteration++) {
-                int64_t zone_num = (iteration->first - zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) + zns_metadata->log_zone_num_config;
+            for (iteration = log_zone_mapping.begin(); iteration != log_zone_mapping.end(); iteration++) {
+                int64_t zone_num = ((iteration->first) / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
                 if (zone_sets.find(zone_num) == zone_sets.end()) {
                     zone_sets[zone_num] = new std::unordered_map<int64_t, int64_t>;
                 }
                 auto map = zone_sets[zone_num];
-                map->insert(std::pair<int64_t, int64_t>((iteration->first % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes), iteration->second));
+                map->insert(std::pair<int64_t, int64_t>((iteration->first) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes, iteration->second));
                 iteration->second &= (1L << 63);
             }
             int ret = zone_merge(&zone_sets);
@@ -448,11 +448,9 @@ extern "C" {
             return 0;
     }
 
-    /*
-    int metadata_write(struct zns_device_metadata *metadata, void *buffer, uint32_t size) {
+    // Original Group 5 code below
 
-    }
-    */
+    /*
 
     int zns_udevice_read(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
         int ret = -ENOSYS;
@@ -476,6 +474,41 @@ extern "C" {
         return 0;
     }
 
+    */
+
+    int zns_udevice_read(struct user_zns_device *my_dev, uint64_t address, void* buffer, uint32_t size) {
+        int ret = -ENOSYS;
+        uint32_t reserved_lba = my_dev->lba_size_bytes;
+        uint32_t blocks_required = size / reserved_lba;
+        uint32_t blocks_read = 0;
+        auto *metadata = (struct zns_device_metadata*) my_dev->_private;
+        for (uint64_t i = address; i < address + blocks_required * reserved_lba; i += reserved_lba) {
+            uint64_t block_entry;
+            bool block_read = true;
+            if (log_zone_mapping.find(i) != log_zone_mapping.end()) {
+                block_entry = log_zone_mapping[i];
+                blocks_read = (block_entry & (1L << 63));
+            }
+
+            if (block_read) {
+                uint64_t zones_no = (i / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
+                
+                if (data_zone_mapping.find(zones_no) == data_zone_mapping.end()) {
+                    memset(buffer, 0, size);
+                    return 0;
+                }
+                
+                block_entry = data_zone_mapping[zones_no] + ((i) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes);
+            }
+
+            ret = nvme_read(metadata->fd, metadata->nsid, (block_entry & ~(1L << 63)), blocks_required - 1, 0, 0, 0, 0, 0, reserved_lba, (char*) buffer + blocks_read, 0, nullptr);
+            blocks_read = blocks_read + reserved_lba;
+        }
+
+        return ret;
+    }
+
+    // Original Group 5 code below
 
     /*
     int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
@@ -536,13 +569,28 @@ extern "C" {
             pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
         }
 
-        __u64 released_lba;
+        __u64 reserved_lba;
         int32_t prev_log_zone_end = metadata->log_zone_end;
         int32_t zone_no = (metadata->log_zone_end / metadata->n_blocks_per_zone);
-        ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required-1, 0, 0, 0, 0, size, buffer, 0, nullptr, &released_lba);
-        metadata->log_zone_end = released_lba + 1;
-        for (uint32_t i = 0; i < blocks_required; i++) {
-            log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
+
+        if (size <= MDTS) {
+            ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required-1, 0, 0, 0, 0, size, buffer, 0, nullptr, &reserved_lba);
+            metadata->log_zone_end = reserved_lba + 1;
+
+            for (uint32_t i = 0; i < blocks_required; i++) {
+                log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
+            }
+
+        } else {            
+            ret = io_with_mdts(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required, buffer, (__u64) size,
+            my_dev->lba_size_bytes, MDTS, false, &reserved_lba);
+            if (ret != 0) {
+                return ret;
+            }
+
+            for (uint32_t i = 0; i < blocks_required; i++) {
+                log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
+            }
         }
 
         pthread_mutex_unlock(&zns_metadata->gc_mutex);
