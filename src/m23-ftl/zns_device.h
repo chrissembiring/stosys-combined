@@ -64,14 +64,14 @@ struct zns_device_metadata
     
     // garbage collection watermark (i.e. clean zones to keep, typically =1 in the test script)
     uint32_t gc_watermark;
-
+    
     // start and end of the log zone and the data zone
     uint32_t log_zone_start, log_zone_end;
     uint32_t data_zone_start, data_zone_end;
     uint32_t n_log_zone;
-
-    uint32_t n_blocks_per_zone;
     
+    uint32_t n_blocks_per_zone;
+
     uint8_t *zone_states;
 
     int log_zone_num_config;
@@ -110,10 +110,10 @@ struct zns_device_metadata
 * The data zone size would be the capacity exposed to the user for read/write. The log space is used internally by your FTL. With the default values: 
 */
 struct zdev_init_params{
-char *name;
-int log_zones;
-int gc_wmark;
-bool force_reset;
+    char *name;
+    int log_zones;
+    int gc_wmark;
+    bool force_reset;
 };
 
 int init_ss_zns_device(struct zdev_init_params *params, struct user_zns_device **my_dev);

@@ -25,7 +25,7 @@ unistd.h
 -
 sys/mman.h
 -
-string
+string.h
 -
 unistd.h
 -

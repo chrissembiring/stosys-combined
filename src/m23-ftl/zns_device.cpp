@@ -1,7 +1,7 @@
 /*
-* MIT License
+ * MIT License
 Copyright (c) 2021 - current
-Authors: Animesh Trivedi
+Authors:  Animesh Trivedi
 This code is part of the Storage System Course at VU Amsterdam
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,7 +18,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-*/
+ */
 
 #include <cerrno>
 #include <cstdint>
@@ -40,20 +40,16 @@ SOFTWARE.
 
 extern "C" {
 
-    // Main storage mapping for log (m2) and data (m3)
     std::unordered_map<int64_t, int64_t> log_zone_mapping;
     std::unordered_map<int64_t, int64_t> data_zone_mapping;
 
-    #define MDTS (64 * 4096)
-
-    // uint64_t mdts;
     struct user_zns_device *zns_device;
     struct zns_device_metadata *zns_metadata;
 
     /*
     The functions mmap_registers() and get_mdts_size() are intended to extract MDTS value of ZNS device.
     Comment them out if hardcoding a constant yields better performance, and if test environment will remain the same.
-    
+    */
 
     static void *mmap_registers(int fd) {
         int ret = -ENOSYS;
@@ -131,18 +127,17 @@ extern "C" {
 
         return pow(2, ctrl.mdts - 1) * mps_min;
     }
-    */
 
-    int io_with_mdts(int fd, uint32_t nsid, uint64_t slba, uint16_t numbers, void *buffer, uint64_t buf_size,
-    uint64_t lba_size, uint64_t mdts_size, bool read, __u64 *lba_result) {
+    
+    int io_with_mdts(int fd, uint32_t nsid, uint64_t slba, void *buffer, uint64_t buf_size, bool read) { 
         int ret = -ENOSYS;
 
-        uint64_t size_to_io, buf_ptr, single_io_size, write_pointer;
+        uint64_t size_to_io, buf_ptr, single_io_size, write_pointer, lba_num, mdts_size = zns_metadata->mdts, lba_size = zns_device->lba_size_bytes;
         size_to_io = buf_size;
         buf_ptr = 0;
-        write_pointer = slba;
+        write_pointer = slba; 
 
-        while (size_to_io) {
+        while (size_to_io > 0) {
             // For every IO, calculate required size
             if (mdts_size < size_to_io) {
                 single_io_size = mdts_size;
@@ -151,43 +146,39 @@ extern "C" {
             }
 
             char* new_buf = (char*) buffer + buf_ptr;
-
+            lba_num = single_io_size / lba_size - ((single_io_size % lba_size) == 0 ? 1 : 0);
+            
             // Perform IO
             if (read) {
-                ret = nvme_read(fd, nsid, write_pointer, single_io_size / lba_size - 1, 0, 0, 0, 0, 0, single_io_size, new_buf, 0, nullptr);
+                ret = nvme_read(fd, nsid, write_pointer, lba_num, 0, 0, 0, 0, 0, single_io_size, new_buf, 0, NULL);
                 // printf("[DEBUG] READ WITH MDTS: %d\n", ret);
-                // printf("nsid: %d, wp: %lu, nlb: %lu\n", nsid, write_pointer, single_io_size / lba_size);
+                // printf("nsid: %d, write_pointer: %lu, num_blocks: %lu\n", nsid, write_pointer, single_io_size / lba_size);
             } else {
                 // TODO: Switch nvme_write() to nvme_zns_append() method.
-                ret = nvme_write(fd, nsid, write_pointer, single_io_size / lba_size - 1, 0, 0, 0, 0, 0, 0, single_io_size, new_buf, 0, nullptr);
+                ret = nvme_write(fd, nsid, write_pointer, lba_num, 0, 0, 0, 0, 0, 0, single_io_size, new_buf, 0, NULL);
                 //ret = nvme_zns_append(fd, nsid, write_pointer, single_io_size / lba_size - 1,
                 //0, 0, 0, 0, single_io_size, (char*) buffer, 0, nullptr, lba_result);
                 // printf("[DEBUG] WRITE WITH MDTS: %d\n", ret);
-                // printf("nsid: %d, wp: %lu, nlb: %lu\n", nsid, write_pointer, single_io_size / lba_size);
+                // printf("nsid: %d, write_pointer: %lu, num_blocks: %lu\n", nsid, write_pointer, single_io_size / lba_size);
             }
-
+            
             if (ret != 0) {
                 printf("[ERROR] FAILED TO PERFORM IO WITH MDTS: %d\n", ret);
                 return ret;
             }
 
-            // Update all related symbols/pointers
-            write_pointer = write_pointer + single_io_size / lba_size;
-            size_to_io = size_to_io - single_io_size;
-            buf_ptr = buf_ptr + single_io_size;
+            buf_ptr += single_io_size;
+            size_to_io -= single_io_size;
+            write_pointer += lba_num + 1;
         }
-
         return 0;
     }
 
-    
-
-    int free_zone_number(int offset) {
-        return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset ) / zns_metadata->n_blocks_per_zone;
+    uint32_t free_zone_number(int offset) {
+        return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset) / zns_metadata->n_blocks_per_zone;
     }
 
-    
-
+    // find the next empty zone address
     int next_empty_zone() {
         for (uint64_t i = zns_metadata->log_zone_num_config; i < zns_device->tparams.zns_num_zones; i++) {
             if (zns_metadata->zone_states[i] == 1) {
@@ -197,67 +188,63 @@ extern "C" {
         return -1;
     }
 
-    int zone_merge(std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> *zone_set_pointer) {
-        auto zone_set = *zone_set_pointer;
+    int zone_merge(std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> *zone_sets_ptr)
+    {
+        auto zone_set = *zone_sets_ptr;
 
-        __u64 reserved_lba;
         int64_t ret, num_blocks = zns_metadata->n_blocks_per_zone, lsb = zns_device->lba_size_bytes;
-        char buffer[num_blocks * lsb] = {0};
-        char log_buffer[lsb] = {0};
+        char buffer[num_blocks * lsb] = {0};   
 
         auto iteration = zone_set.begin();
         for (iteration; iteration != zone_set.end(); iteration++) {
             int64_t zone_number = next_empty_zone(), prev_zone = -1;
             bool used_log = false;
             if (zone_number == -1) {
-                zone_number = (zns_metadata->log_zone_num_config - 1) * zns_metadata->n_blocks_per_zone;
+                zone_number = (zns_metadata->log_zone_num_config - 1) * zns_metadata->n_blocks_per_zone; // use the last zone of log zones
                 used_log = true;
             }
 
-            if (data_zone_mapping.find(iteration-> first) != data_zone_mapping.end()) {
-                ret = io_with_mdts(zns_metadata->fd, zns_metadata->nsid, data_zone_mapping[iteration->first], 
-                                    num_blocks, //entry 
-                                    buffer,
-                                    num_blocks * lsb,
-                                    zns_device->lba_size_bytes,
-                                    MDTS,
-                                    true,
-                                    0);
-                
+            if (data_zone_mapping.find(iteration->first) != data_zone_mapping.end()) {
+                ret = io_with_mdts(zns_metadata->fd, zns_metadata->nsid, data_zone_mapping[iteration->first], buffer, num_blocks * lsb, true);
                 if (ret) {
                     printf("ERROR: failed during merging");
                     return ret;
                 }
-            
+                
                 zns_metadata->zone_states[data_zone_mapping[iteration->first] / num_blocks] = 1;
                 prev_zone = data_zone_mapping[iteration->first];
             }
-
+            
             auto map = *(iteration->second);
             auto j = map.begin();
-            for (j; j!= map.end(); j++) {
-                ret = nvme_read(zns_metadata->fd, zns_metadata->nsid, j->second, 0, 0, 0, 0, 0, 0, lsb, buffer + lsb, j->first, nullptr);
-            }
-        
-            if (ret) {
-                printf("ERROR: failed to read log block");
-                return ret;
+            for (j; j != map.end(); j++) {
+                ret = nvme_read(zns_metadata->fd, zns_metadata->nsid, j->second, 0, 0, 0, 0, 0, 0, lsb, buffer + lsb * j->first, 0, NULL);
+                if (ret) {
+                    printf("ERROR: failed to read log block at 0x%lx, ret: %ld\n", j->second, ret);
+                    return ret;
+                }
             }
 
             if (used_log) {
-                nvme_zns_mgmt_send(zns_metadata->fd, zns_metadata->nsid, prev_zone, false, NVME_ZNS_ZSA_RESET, 0, nullptr);
-                // ret io_mdts read
+                nvme_zns_mgmt_send(zns_metadata->fd, zns_metadata->nsid, prev_zone, false, NVME_ZNS_ZSA_RESET, 0, NULL);
+                ret = io_with_mdts(zns_metadata->fd, zns_metadata->nsid, prev_zone, buffer, num_blocks * lsb, false);
                 if (ret) {
+                    printf("ERROR: failed to write zone at 0x%lx, ret: %ld, used log zone\n", zone_number, ret);
                     return ret;
                 }
-                zns_metadata->zone_states[prev_zone / num_blocks] = 14;                
+                zns_metadata->zone_states[prev_zone / num_blocks] = 14;
+                nvme_zns_mgmt_send(zns_metadata->fd, zns_metadata->nsid, zone_number, false, NVME_ZNS_ZSA_RESET, 0, NULL);
             } else {
-                // ret io_mdts write
+                ret = io_with_mdts(zns_metadata->fd, zns_metadata->nsid, zone_number, buffer, num_blocks * lsb, false);
                 if (ret) {
+                    printf("ERROR: failed to write zone at 0x%lx, ret: %ld\n", zone_number, ret);
                     return ret;
                 }
                 data_zone_mapping[iteration->first] = zone_number;
                 zns_metadata->zone_states[zone_number / num_blocks] = 14;
+
+                if (prev_zone != -1)
+                    nvme_zns_mgmt_send(zns_metadata->fd, zns_metadata->nsid, prev_zone, false, NVME_ZNS_ZSA_RESET, 0, NULL);
             }
             delete iteration->second;
         }
@@ -279,25 +266,23 @@ extern "C" {
 
             std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> zone_sets;
             std::unordered_map<int64_t, int64_t>::iterator iteration;
-            // auto iteration = log_zone_mapping.begin();
-
             for (iteration = log_zone_mapping.begin(); iteration != log_zone_mapping.end(); iteration++) {
-                int64_t zone_num = ((iteration->first) / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
-                if (zone_sets.find(zone_num) == zone_sets.end()) {
-                    zone_sets[zone_num] = new std::unordered_map<int64_t, int64_t>;
+                int64_t zone_number = ((iteration->first) / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
+                if (!(zone_sets.find(zone_number) != zone_sets.end())) {
+                    zone_sets[zone_number] = new std::unordered_map<int64_t, int64_t>;
                 }
-                auto map = zone_sets[zone_num];
-                map->insert(std::pair<int64_t, int64_t>((iteration->first) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes, iteration->second));
+                auto map = zone_sets[zone_number];
+                map->insert(std::pair<int64_t, int64_t>(((iteration->first) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes), iteration->second));
                 iteration->second &= (1L << 63);
             }
             int ret = zone_merge(&zone_sets);
-
+            
             if (ret) {
                 printf("Error: GC failed, ret:%d\n", ret);
             }
 
             for (int i = 0; i < metadata->log_zone_num_config; i++) {
-                nvme_zns_mgmt_send(metadata->fd, metadata->nsid, i * metadata->n_blocks_per_zone, false, NVME_ZNS_ZSA_RESET, 0, nullptr);
+                nvme_zns_mgmt_send(metadata->fd, metadata->nsid, i * metadata->n_blocks_per_zone, false, NVME_ZNS_ZSA_RESET, 0, NULL);
             }
 
             metadata->log_zone_end = metadata->log_zone_start;
@@ -308,18 +293,22 @@ extern "C" {
         }
         return (void *)0;
     }
-
+        
     int deinit_ss_zns_device(struct user_zns_device *my_dev) {
         int ret = -ENOSYS;
 
-        auto *metadata = (struct zns_device_metadata*) my_dev->_private;
+        //struct zns_device_metadata *metadata = (struct zns_device_metadata *)my_dev->_private;
+        auto *metadata = (struct zns_device_metadata *)my_dev->_private;
         metadata->gc_thread_stop = true;
         pthread_cond_signal(&metadata->gc_wakeup);
+
+        // wait for gc stop
         pthread_join(metadata->gc_thread_id, NULL);
+
         pthread_mutex_destroy(&metadata->gc_mutex);
         pthread_cond_destroy(&metadata->gc_wakeup);
-        
         ret = close(metadata->fd);
+        
         if (ret != 0) {
             printf("[ERROR] FAILED TO CLOSE FILE DESC: %d\n", ret);
             return ret;
@@ -328,12 +317,12 @@ extern "C" {
         free(metadata->zone_states);
         free(my_dev->_private);
         free(my_dev);
-
+        
         return ret;
     }
 
     int init_ss_zns_device(struct zdev_init_params *params, struct user_zns_device **my_dev) {
-        int ret; // = -ENOSYS;
+        int ret = -ENOSYS;
 
         int fd = nvme_open(params->name);
         if (fd < 0) {
@@ -343,13 +332,12 @@ extern "C" {
 
         auto *metadata = static_cast<struct zns_device_metadata *>(calloc(sizeof(struct zns_device_metadata), 1));
         (*my_dev) = static_cast<struct user_zns_device *>(calloc(sizeof(struct user_zns_device), 1));
-        // (*my_dev)->_private = metadata;
-
+        
         metadata->fd = fd;
         metadata->gc_watermark = params->gc_wmark;
         metadata->log_zone_num_config = params->log_zones;
         (*my_dev)->_private = metadata;
-
+        
         /**
         * Device Identification Phase
         * Mainly for collecting related attributes of the zns device
@@ -372,7 +360,7 @@ extern "C" {
 
         // Get zone report (for a single one)
         struct nvme_zone_report single_zone_report{};
-        ret = nvme_zns_mgmt_recv(fd, metadata->nsid, 0, NVME_ZNS_ZRA_REPORT_ZONES, NVME_ZNS_ZRAS_REPORT_ALL, false, sizeof(single_zone_report), &single_zone_report);
+        ret = nvme_zns_mgmt_recv(fd, metadata->nsid, 0, NVME_ZNS_ZRA_REPORT_ZONES, NVME_ZNS_ZRAS_REPORT_ALL, false, sizeof(single_zone_report), (void *)&single_zone_report);
         if (ret != 0) {
             printf("[ERROR] FAILED TO REPORT ZONE INFO: %d\n", ret);
             return ret;
@@ -381,12 +369,29 @@ extern "C" {
         (*my_dev)->tparams.zns_num_zones = single_zone_report.nr_zones;
         metadata->zone_states = (uint8_t *)calloc(single_zone_report.nr_zones, sizeof(uint8_t));
 
+        if (params->force_reset)
+        {
+            ret = nvme_zns_mgmt_send(fd, metadata->nsid, 0, true, NVME_ZNS_ZSA_RESET, 0, NULL);
+            if (ret)
+            {
+                printf("ERROR: failed to reset all zones %d \n", ret);
+                return ret;
+            }
+
+            // metadata->data_zone_start = metadata->data_zone_end = params->log_zones * n_blocks_per_zone;
+            metadata->log_zone_start = metadata->log_zone_end = 0;
+        }
+
+        
+        // metadata->mdts = get_mdts_size(metadata->fd, params->name);
+        metadata->mdts = get_mdts_size(metadata->fd);
+        
         // Get zone report (for all zones)
         // After getting the one single_zone_report, we now know the number of zones
         // Then we proceed to getting reports of all zones
         uint64_t all_zone_reports_size = sizeof(single_zone_report) + (single_zone_report.nr_zones * sizeof(struct nvme_zns_desc));
-        char* all_zone_reports = (char*) calloc(1, all_zone_reports_size);
-        ret = nvme_zns_mgmt_recv(fd, metadata->nsid, 0, NVME_ZNS_ZRA_REPORT_ZONES, NVME_ZNS_ZRAS_REPORT_ALL, true, all_zone_reports_size, (void*) all_zone_reports);
+        char *all_zone_reports= (char *)calloc(1, all_zone_reports_size);
+        ret = nvme_zns_mgmt_recv(fd, metadata->nsid, 0, NVME_ZNS_ZRA_REPORT_ZONES, NVME_ZNS_ZRAS_REPORT_ALL, 1, all_zone_reports_size, (void *)all_zone_reports);
         // For the time being the reported zone numbers should be 32,
         // so ((struct nvme_zone_report *)all_zone_reports)->entries[31] should be the last zone
         if (ret != 0) {
@@ -394,8 +399,6 @@ extern "C" {
             free(all_zone_reports);
             return ret;
         }
-
-
 
         /**
         * Attributes & Data Population Phase
@@ -405,192 +408,132 @@ extern "C" {
         (*my_dev)->lba_size_bytes = 1 << ns.lbaf[(ns.flbas & 0xf)].ds;
         (*my_dev)->tparams.zns_lba_size = (*my_dev)->lba_size_bytes;
         // (*my_dev)->tparams.zns_num_zones = single_zone_report.nr_zones;
-        uint64_t block_per_zone = ((struct nvme_zone_report *)all_zone_reports)->entries[0].zcap;
-        (*my_dev)->tparams.zns_zone_capacity = block_per_zone * (*my_dev)->lba_size_bytes;
+        uint64_t n_blocks_per_zone = ((struct nvme_zone_report *)all_zone_reports)->entries[0].zcap;
+        //metadata->n_blocks_per_zone = n_blocks_per_zone;
+        (*my_dev)->tparams.zns_zone_capacity = n_blocks_per_zone * (*my_dev)->lba_size_bytes;
         (*my_dev)->capacity_bytes = (single_zone_report.nr_zones - params->log_zones) * ((*my_dev)->tparams.zns_zone_capacity);
-
-
 
         // For Milestone 2, GC watermark and two "pointers" chasing each other
         // metadata->gc_watermark = params->gc_wmark;
         metadata->log_zone_start = 0;
         metadata->log_zone_end = 0;
-        metadata->data_zone_start = params->log_zones * block_per_zone;
-        metadata->data_zone_end = params->log_zones * block_per_zone;
-        metadata->n_blocks_per_zone = block_per_zone;
+        metadata->data_zone_start = params->log_zones * n_blocks_per_zone;
+        metadata->data_zone_end = params->log_zones * n_blocks_per_zone;
+        metadata->n_blocks_per_zone = n_blocks_per_zone;
         metadata->n_log_zone = params->log_zones;
-        
-        
+
         for (uint64_t i = params->log_zones; i < single_zone_report.nr_zones; i++) {
             metadata->zone_states[i] = (((struct nvme_zone_report *)all_zone_reports)->entries[i].zs >> 4);
         }
-        
+
         free(all_zone_reports);
 
         ret = pthread_create(&metadata->gc_thread_id, NULL, &trigger_gc, metadata);
+        if (ret) {
+            printf("ERROR: failed to create gc thread %d \n", ret);
+            return ret;
+        }
 
-        zns_device =  *my_dev;
+        zns_device = *my_dev;
         zns_metadata = metadata;
-
-
-        //mdts = get_mdts_size(metadata->fd);
-        //printf("%lu", mdts);
 
         // Reset the device if required
         if (params->force_reset) {
-            ret = nvme_zns_mgmt_send(fd, metadata->nsid, 0, true, NVME_ZNS_ZSA_RESET, 0, nullptr);
+            ret = nvme_zns_mgmt_send(fd, metadata->nsid, 0, true, NVME_ZNS_ZSA_RESET, 0, NULL);
             if (ret != 0) {
                 printf("[ERROR] FAILED TO RESET ALL ZONES: %d\n", ret);
                 return ret;
             }
         }
 
-            return 0;
-    }
-
-    // Original Group 5 code below
-
-    /*
-
-    int zns_udevice_read(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
-        int ret = -ENOSYS;
-        auto *metadata = (zns_device_metadata*) my_dev->_private;
-
-        uint32_t blocks_required = size / my_dev->lba_size_bytes;
-        uint64_t entry = log_zone_mapping[address];
-        if (size <= MDTS) {
-            ret = nvme_read(metadata->fd, metadata->nsid, entry, blocks_required - 1, 0, 0, 0, 0, 0, size, (char*) buffer, 0, nullptr);
-            if (ret != 0) {
-                printf("[ERROR] FAILED TO READ FROM DEVICE: %d\n", ret);
-                return ret;
-            }
-        } else {
-            ret = io_with_mdts(metadata->fd, metadata->nsid, entry, blocks_required, buffer, (__u64) size,
-            my_dev->lba_size_bytes, MDTS, true, nullptr);
-            if (ret != 0) {
-                return ret;
-            }
-        }
         return 0;
     }
 
-    */
+    int zns_udevice_read(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
+        if (size % my_dev->lba_size_bytes) {
+            printf("INVALID: read size not aligned to block size\n");
+            return -1;
+        }
 
-    int zns_udevice_read(struct user_zns_device *my_dev, uint64_t address, void* buffer, uint32_t size) {
-        int ret = -ENOSYS;
-        uint32_t reserved_lba = my_dev->lba_size_bytes;
-        uint32_t blocks_required = size / reserved_lba;
-        uint32_t blocks_read = 0;
-        auto *metadata = (struct zns_device_metadata*) my_dev->_private;
-        for (uint64_t i = address; i < address + blocks_required * reserved_lba; i += reserved_lba) {
-            uint64_t block_entry;
-            bool block_read = true;
-            if (log_zone_mapping.find(i) != log_zone_mapping.end()) {
-                block_entry = log_zone_mapping[i];
-                blocks_read = (block_entry & (1L << 63));
+        int32_t ret, lba_s = my_dev->lba_size_bytes;
+        uint32_t blocks = size / lba_s, num_read = 0;
+        auto *metadata = (struct zns_device_metadata *)my_dev->_private;
+        for (uint64_t i = address; i < address + blocks * lba_s; i += lba_s) {
+            uint64_t entry;
+            bool read_data = true;
+            // the top bit 1 means invalid
+            if ((log_zone_mapping.find(i) != log_zone_mapping.end())) {
+                entry = log_zone_mapping[i];
+                read_data = (entry & (1L << 63));
             }
 
-            if (block_read) {
-                uint64_t zones_no = (i / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
-                
-                if (data_zone_mapping.find(zones_no) == data_zone_mapping.end()) {
+            if (read_data) {
+                uint64_t zone_number = ((i) / (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes)) + zns_metadata->log_zone_num_config;
+                if (!(data_zone_mapping.find(zone_number) != data_zone_mapping.end())) {
+                    // nothing at this address, return 0s.
                     memset(buffer, 0, size);
                     return 0;
                 }
-                
-                block_entry = data_zone_mapping[zones_no] + ((i) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes);
+
+                entry = data_zone_mapping[zone_number] + ((i) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes);
             }
 
-            ret = nvme_read(metadata->fd, metadata->nsid, (block_entry & ~(1L << 63)), blocks_required - 1, 0, 0, 0, 0, 0, reserved_lba, (char*) buffer + blocks_read, 0, nullptr);
-            blocks_read = blocks_read + reserved_lba;
+            if (size < metadata->mdts) {
+                ret = nvme_read(metadata->fd, metadata->nsid, (entry & ~(1L << 63)), 0, 0, 0, 0, 0, 0, lba_s, (char *)buffer + num_read, 0, NULL);
+                if (ret) {
+                    printf("ERROR: failed to read at 0x%lx, ret: %d\n", entry & ~(1L << 63), ret);
+                    return ret;
+                }
+                num_read += lba_s;
+            } else {
+                ret = io_with_mdts(metadata->fd, metadata->nsid, (entry & ~(1L << 63)), (char *)buffer + num_read, size, true);
+                if (ret) {
+                    printf("ERROR: failed to read at 0x%lx, ret: %d\n", entry & ~(1L << 63), ret);
+                    return ret;
+                }
+                num_read += lba_s;
+            }
         }
 
-        return ret;
+        return 0;
     }
 
-    // Original Group 5 code below
+    int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size)  {
+        if (size % my_dev->lba_size_bytes) {
+            printf("INVALID: write size not aligned to block size\n");
+            return -1;
+        }
 
-    /*
-    int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
-        int ret = -ENOSYS;
-        struct zns_device_metadata *metadata = (struct zns_device_metadata*) my_dev->_private;
-        uint32_t blocks_required = size / my_dev->lba_size_bytes;
+        auto *metadata = (struct zns_device_metadata *)my_dev->_private;
+        uint32_t blocks = size / my_dev->lba_size_bytes;
+        __u64 lba_result = 0;
         pthread_mutex_lock(&zns_metadata->gc_mutex);
-        // int free_zone = zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + blocks_required ) / zns_metadata->n_blocks_per_zone;
-        while(free_zone_number(blocks_required) <= metadata->gc_watermark) {
+        while (free_zone_number(blocks) <= metadata->gc_watermark) {
             zns_metadata->do_gc = true;
             pthread_cond_signal(&zns_metadata->gc_wakeup);
             pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
         }
 
-        if (size <= MDTS) {
-            __u64 lba_result = 0;
-            
-            // TODO (Chris) : Appending might be better, find a way to switch from nvme_write()
-            // ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required - 1,
-            
-            ret = nvme_write(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required - 1, 0, 0, 0, 0, 0, 0, size, (char*) buffer, 0, nullptr);
+        int32_t ret, prev_log_zone_end = metadata->log_zone_end, zone_no = metadata->log_zone_end / metadata->n_blocks_per_zone;
+        
+        if (size < metadata->mdts) {
+            ret = nvme_zns_append(metadata->fd, metadata->nsid, zone_no * metadata->n_blocks_per_zone, blocks - 1, 0, 0, 0, 0, size, buffer, 0, NULL, &lba_result);
             if (ret != 0) {
                 printf("[ERROR] FAILED TO WRITE TO DEVICE: %d\n", ret);
                 return ret;
             }
+            
             metadata->log_zone_end = lba_result + 1;
-            } else {
-            __u64 lba_result = 0;
-            ret = io_with_mdts(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required, buffer, (__u64) size,
-            my_dev->lba_size_bytes, MDTS, false, &lba_result);
+        } else {
+            ret = io_with_mdts(metadata->fd, metadata->nsid, zone_no * metadata->n_blocks_per_zone, buffer, size, false);
             if (ret != 0) {
-            return ret;
-            }
-            metadata->log_zone_end = lba_result + 1;
-        }
-
-        for (uint32_t i = address; i < address + blocks_required; i++) {
-            log_zone_mapping[i] = metadata->log_zone_slba;
-            metadata->log_zone_slba += 1;
-        }
-
-        pthread_mutex_unlock(&zns_metadata->gc_mutex);
-        
-        return 0;
-    }
-
-    */
-
-    int zns_udevice_write(struct user_zns_device *my_dev, uint64_t address, void *buffer, uint32_t size) {
-        int ret = -ENOSYS;
-        struct zns_device_metadata *metadata = (struct zns_device_metadata*) my_dev->_private;
-        uint32_t blocks_required = size / my_dev->lba_size_bytes;
-        pthread_mutex_lock(&zns_metadata->gc_mutex);
-        // int free_zone = zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + blocks_required ) / zns_metadata->n_blocks_per_zone;
-        while(free_zone_number(blocks_required) <= metadata->gc_watermark) {
-            zns_metadata->do_gc = true;
-            pthread_cond_signal(&zns_metadata->gc_wakeup);
-            pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
-        }
-
-        __u64 reserved_lba;
-        int32_t prev_log_zone_end = metadata->log_zone_end;
-        int32_t zone_no = (metadata->log_zone_end / metadata->n_blocks_per_zone);
-
-        if (size <= MDTS) {
-            ret = nvme_zns_append(metadata->fd, metadata->nsid, metadata->log_zone_end, blocks_required-1, 0, 0, 0, 0, size, buffer, 0, nullptr, &reserved_lba);
-            metadata->log_zone_end = reserved_lba + 1;
-
-            for (uint32_t i = 0; i < blocks_required; i++) {
-                log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
-            }
-
-        } else {            
-            ret = io_with_mdts(metadata->fd, metadata->nsid, metadata->log_zone_slba, blocks_required, buffer, (__u64) size,
-            my_dev->lba_size_bytes, MDTS, false, &reserved_lba);
-            if (ret != 0) {
+                printf("[ERROR] FAILED TO WRITE TO DEVICE: %d\n", ret);
                 return ret;
             }
+        }
 
-            for (uint32_t i = 0; i < blocks_required; i++) {
-                log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
-            }
+        for (uint32_t i = 0; i < blocks; i++) {
+            log_zone_mapping[address + i * my_dev->lba_size_bytes] = prev_log_zone_end + i;
         }
 
         pthread_mutex_unlock(&zns_metadata->gc_mutex);
