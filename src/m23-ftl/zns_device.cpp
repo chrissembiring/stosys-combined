@@ -50,11 +50,16 @@ extern "C" {
     const int EMPTY_ZONE = 1;
     const int FULL_ZONE = 14;
 
+    // Temporary value. MDTS check risks intermittent segmentation fault. 
+    // Uncomment mmap_registers(), get_mdts_size() functions if memory leak root cause has been addressed.
+    const int MDTS = (64 * 4096);
+
     /*
     The functions mmap_registers() and get_mdts_size() are intended to extract MDTS value of ZNS device.
     Comment them out if hardcoding a constant yields better performance, and if test environment will remain the same.
-    */
+    
 
+    // MDTS needs this
     static void *mmap_registers(int fd) {
         int ret = -ENOSYS;
         // Here goes the dirty hack
@@ -100,6 +105,7 @@ extern "C" {
         return membase;
     }
 
+    // MDTS needs this 
     struct nvme_bar_cap {
     __u16 mqes;
     __u8 ams_cqr;
@@ -125,26 +131,34 @@ extern "C" {
         low = le32_to_cpu(*p);
         high = le32_to_cpu(*(p + 1));
 
-        uint64_t cap = ((__u64) high << 32) | low;
+        // harcoding mdts since the above is giving errors when Qemu is restarted
+        // le32_to_cpu throws a segmentation fault ....
+        // Hardcoding won't work when block size is changed, so I am removing mdts
+        // low = 251725823;
+        // high = 4200480;
+
+        uint64_t cap = ((__u64)high << 32) | low;
         auto* cap_struct = (struct nvme_bar_cap *)&cap;
         int mps_min = 1 << (12 + (cap_struct->mpsmax_mpsmin & 0x0f));
 
         return pow(2, ctrl.mdts - 1) * mps_min;
     }
 
-    
+    */
+
+    // Read/Write operations involving data buffer larger than MDTS size
     int io_with_mdts(int fd, uint32_t nsid, uint64_t slba, void *buffer, uint64_t buf_size, bool read) { 
         int ret = -ENOSYS;
 
-        uint64_t size_to_io, buf_ptr, single_io_size, write_pointer, lba_num, mdts_size = zns_metadata->mdts, lba_size = zns_device->lba_size_bytes;
+        uint64_t size_to_io, buf_ptr, single_io_size, write_pointer, lba_num, /* mdts_size = zns_metadata->mdts,*/ lba_size = zns_device->lba_size_bytes;
         size_to_io = buf_size;
         buf_ptr = 0;
         write_pointer = slba; 
 
         while (size_to_io > 0) {
             // For every IO, calculate required size
-            if (mdts_size < size_to_io) {
-                single_io_size = mdts_size;
+            if (MDTS < size_to_io) {
+                single_io_size = MDTS;
             } else {
                 single_io_size = size_to_io;
             }
@@ -177,6 +191,7 @@ extern "C" {
         }
         return 0;
     }
+    
 
     uint32_t free_zone_number(int offset) {
         return zns_metadata->log_zone_num_config - (zns_metadata->log_zone_end - zns_metadata->log_zone_start + offset) / zns_metadata->n_blocks_per_zone;
@@ -192,6 +207,7 @@ extern "C" {
         return -1;
     }
 
+    // Full merge operation
     int zone_merge(std::unordered_map<int64_t, std::unordered_map<int64_t, int64_t>*> *zone_sets_ptr) {
         auto zone_set = *zone_sets_ptr;
 
@@ -263,9 +279,9 @@ extern "C" {
         struct zns_device_metadata *metadata = (struct zns_device_metadata *)args;
         while (true) {
             pthread_mutex_lock(&metadata->gc_mutex);
-            while (!metadata->gc_thread_stop && !metadata->do_gc) {
+            while (!metadata->gc_thread_stop && !metadata->trigger_my_gc) {
                 // signal
-                pthread_cond_wait(&metadata->gc_wakeup, &metadata->gc_mutex);
+                pthread_cond_wait(&metadata->start_gc, &metadata->gc_mutex);
             }
 
             if (metadata->gc_thread_stop) {
@@ -282,6 +298,8 @@ extern "C" {
                 }
                 auto map = zone_sets[zone_number];
                 map->insert(std::pair<int64_t, int64_t>(((iteration->first) % (zns_metadata->n_blocks_per_zone * zns_device->lba_size_bytes) / zns_device->lba_size_bytes), iteration->second));
+                // Invalidates the second pair of std::iterator iteration
+                iteration->second &= (1L << 63);
             }
             int ret = zone_merge(&zone_sets);
             
@@ -295,8 +313,8 @@ extern "C" {
 
             metadata->log_zone_end = metadata->log_zone_start;
             log_zone_mapping.clear();
-            metadata->do_gc = false;
-            pthread_cond_signal(&metadata->gc_sleep);
+            metadata->trigger_my_gc = false;
+            pthread_cond_signal(&metadata->stop_gc);
             pthread_mutex_unlock(&metadata->gc_mutex);
         }
         return (void *)0;
@@ -308,13 +326,13 @@ extern "C" {
         //struct zns_device_metadata *metadata = (struct zns_device_metadata *)my_dev->_private;
         auto *metadata = (struct zns_device_metadata *)my_dev->_private;
         metadata->gc_thread_stop = true;
-        pthread_cond_signal(&metadata->gc_wakeup);
+        pthread_cond_signal(&metadata->start_gc);
 
         // wait for gc stop
         pthread_join(metadata->gc_thread_id, NULL);
 
         pthread_mutex_destroy(&metadata->gc_mutex);
-        pthread_cond_destroy(&metadata->gc_wakeup);
+        pthread_cond_destroy(&metadata->start_gc);
         ret = close(metadata->fd);
         
         if (ret != 0) {
@@ -390,8 +408,9 @@ extern "C" {
             metadata->log_zone_start = metadata->log_zone_end = 0;
         }
 
-        metadata->mdts = get_mdts_size(metadata->fd);
-        
+        //metadata->mdts = get_mdts_size(metadata->fd);
+        metadata->mdts = MDTS;
+
         // Get zone report (for all zones)
         // After getting the one single_zone_report, we now know the number of zones
         // Then we proceed to getting reports of all zones
@@ -515,9 +534,9 @@ extern "C" {
         // zns_metadata has to be consistent throughout the program, hence declaring it globally instead of passing metadata by reference.
         pthread_mutex_lock(&zns_metadata->gc_mutex);
         while (free_zone_number(blocks) <= metadata->gc_watermark) {
-            zns_metadata->do_gc = true;
-            pthread_cond_signal(&zns_metadata->gc_wakeup);
-            pthread_cond_wait(&zns_metadata->gc_sleep, &zns_metadata->gc_mutex);
+            zns_metadata->trigger_my_gc = true;
+            pthread_cond_signal(&zns_metadata->start_gc);
+            pthread_cond_wait(&zns_metadata->stop_gc, &zns_metadata->gc_mutex);
         }
 
         int32_t ret, prev_log_zone_end = metadata->log_zone_end, zone_no = metadata->log_zone_end / metadata->n_blocks_per_zone;

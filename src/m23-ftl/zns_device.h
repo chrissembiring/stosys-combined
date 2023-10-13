@@ -28,7 +28,7 @@ SOFTWARE.
 
 extern "C"{
 //https://github.com/mplulu/google-breakpad/issues/481 - taken from here
-#define typeof __typeof__
+#define typeof _typeof_
 #define container_of(ptr, type, member) ({                      \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
         (type *)( (char *)__mptr - offsetof(type,member) );})
@@ -60,12 +60,15 @@ struct zns_device_metadata
     uint32_t nsid;
 
     uint64_t log_zone_slba;
+
+    // Let's add mdts for later usage
     uint32_t mdts;
     
     // garbage collection watermark (i.e. clean zones to keep, typically =1 in the test script)
     uint32_t gc_watermark;
     
     // start and end of the log zone and the data zone
+    // for m4 perhaps
     uint32_t log_zone_start, log_zone_end;
     uint32_t data_zone_start, data_zone_end;
     uint32_t n_log_zone;
@@ -77,12 +80,12 @@ struct zns_device_metadata
     int log_zone_num_config;
 
     pthread_mutex_t gc_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t gc_wakeup = PTHREAD_COND_INITIALIZER;
-    pthread_cond_t gc_sleep = PTHREAD_COND_INITIALIZER;
+    pthread_cond_t start_gc = PTHREAD_COND_INITIALIZER;
+    pthread_cond_t stop_gc = PTHREAD_COND_INITIALIZER;
 
     pthread_t gc_thread_id = 0;
     bool gc_thread_stop = false;
-    bool do_gc = false;
+    bool trigger_my_gc = false;
     // ...
 };
 
